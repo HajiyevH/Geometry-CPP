@@ -109,9 +109,9 @@ bool arePolylinesCloserThanThresholdBoundingBox(std::vector<sPoint2D>& polyline1
             // only checking the distance if they are close enough
             if (boundingBoxesCloserThanThreshold(box1, box2))
                 // checking if point on polyline1 is closer to segment on polyline2
-                if((pointToSegmentDistance(polyline1[p1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline1[p1+1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD)||
+                if((pointToSegmentDistanceSquared(polyline1[p1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD || pointToSegmentDistanceSquared(polyline1[p1+1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD)||
                     // checking if point on polyline2 is closer to segment on polyline1
-                    (pointToSegmentDistance(polyline2[p2],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline2[p2+1],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD))
+                    (pointToSegmentDistanceSquared(polyline2[p2],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD || pointToSegmentDistanceSquared(polyline2[p2+1],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD))
                     return true; // early exit if any pair is closer than threshold
         }
     }
