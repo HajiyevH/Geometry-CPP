@@ -16,7 +16,7 @@ float y;
 
 
 // Function to calculate distance between singular point and segment
-float pointToSegmentDistance(const sPoint2D& p, const sPoint2D& a, const sPoint2D& b)
+float pointToSegmentDistanceSquared(const sPoint2D& p, const sPoint2D& a, const sPoint2D& b)
 {
     // find the values of AB segment
     float dx = b.x - a.x;
@@ -39,7 +39,7 @@ float pointToSegmentDistance(const sPoint2D& p, const sPoint2D& a, const sPoint2
     //find the distance between point and closest point to it in segment
     float distX = p.x - projX;
     float distY = p.y - projY;
-    return std::sqrt(distX * distX + distY * distY);
+    return distX * distX + distY * distY;
 }
 
 // =====================================================================================================================================
@@ -47,15 +47,16 @@ float pointToSegmentDistance(const sPoint2D& p, const sPoint2D& a, const sPoint2
 // Function to check if any points on one polyline are closer to any segments on the other polyline done in a simple and BruteForce way
 bool arePolylinesCloserThanThresholdBrute(std::vector<sPoint2D>& polyline1,std::vector<sPoint2D>& polyline2)
 {
+    const float thresholdSquared = DISTANCE_THRESHOLD * DISTANCE_THRESHOLD;
 
     for(int p1 = 0; p1+1 < polyline1.size();p1++)
     {
         for(int p2 = 0; p2+1 < polyline2.size();p2++)
         {
             // checking if point on polyline1 is closer to segment on polyline2
-            if((pointToSegmentDistance(polyline1[p1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline1[p1+1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD)||
+            if((pointToSegmentDistanceSquared(polyline1[p1],polyline2[p2],polyline2[p2+1]) < thresholdSquared || pointToSegmentDistanceSquared(polyline1[p1+1],polyline2[p2],polyline2[p2+1]) < thresholdSquared)||
                 // checking if point on polyline2 is closer to segment on polyline1
-                (pointToSegmentDistance(polyline2[p2],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline2[p2+1],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD))
+                (pointToSegmentDistanceSquared(polyline2[p2],polyline1[p1],polyline1[p1+1]) < thresholdSquared || pointToSegmentDistanceSquared(polyline2[p2+1],polyline1[p1],polyline1[p1+1]) < thresholdSquared))
                 return true; // early exit if any pair is closer than threshold
         }
     }
@@ -86,8 +87,8 @@ bool boundingBoxesCloserThanThreshold(const BoundingBox& box1, const BoundingBox
     // return (dx * dx + dy * dy) < (DISTANCE_THRESHOLD * DISTANCE_THRESHOLD);
 
     // Checking if expaded box (box1) is overlapping the box2 
-    if (box1.maxX + DISTANCE_THRESHOLD < box2.minX || box1.minX + DISTANCE_THRESHOLD > box2.maxX ||
-        box1.maxY + DISTANCE_THRESHOLD < box2.minY || box1.minY + DISTANCE_THRESHOLD > box2.maxY)
+    if (box1.maxX + DISTANCE_THRESHOLD < box2.minX || box1.minX - DISTANCE_THRESHOLD > box2.maxX ||
+        box1.maxY + DISTANCE_THRESHOLD < box2.minY || box1.minY - DISTANCE_THRESHOLD > box2.maxY)
     {
         return false; // No overlap so not closer
     }
