@@ -62,6 +62,22 @@ bool arePolylinesCloserThanThresholdBrute(std::vector<sPoint2D>& polyline1,
     return false;
 
 }
+
+// Struct to hold our BoundingBoxes
+struct BoundingBox {
+    float minX, maxX, minY, maxY;
+};
+
+// Function to get boundingbox of two points
+BoundingBox getBoundingBox(const sPoint2D& a, const sPoint2D& b) {
+    BoundingBox box;
+    box.minX = std::min(a.x, b.x);
+    box.maxX = std::max(a.x, b.x);
+    box.minY = std::min(a.y, b.y);
+    box.maxY = std::max(a.y, b.y);
+    return box;
+}
+
 int main() {
     std::vector<sPoint2D> polyline1 {
         {2.0F,3.0F}, {3.0F,4.0F}, {2.0F,6.0F}
