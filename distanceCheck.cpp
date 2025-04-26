@@ -42,9 +42,10 @@ float pointToSegmentDistance(const sPoint2D& p, const sPoint2D& a, const sPoint2
     return std::sqrt(distX * distX + distY * distY);
 }
 
+// =====================================================================================================================================
+
 // Function to check if any points on one polyline are closer to any segments on the other polyline done in a simple and BruteForce way
-bool arePolylinesCloserThanThresholdBrute(std::vector<sPoint2D>& polyline1,
-                                          std::vector<sPoint2D>& polyline2)
+bool arePolylinesCloserThanThresholdBrute(std::vector<sPoint2D>& polyline1,std::vector<sPoint2D>& polyline2)
 {
 
     for(int p1 = 0; p1+1 < polyline1.size();p1++)
@@ -54,14 +55,14 @@ bool arePolylinesCloserThanThresholdBrute(std::vector<sPoint2D>& polyline1,
             // checking if point on polyline1 is closer to segment on polyline2
             if((pointToSegmentDistance(polyline1[p1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline1[p1+1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD)||
                 // checking if point on polyline2 is closer to segment on polyline1
-                (pointToSegmentDistance(polyline1[p2],polyline2[p1],polyline2[p1+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline1[p2+1],polyline2[p1],polyline2[p1+1]) < DISTANCE_THRESHOLD))
+                (pointToSegmentDistance(polyline2[p2],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline2[p2+1],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD))
                 return true; // early exit if any pair is closer than threshold
         }
     }
-
     return false;
-
 }
+
+// =====================================================================================================================================
 
 // Struct to hold our BoundingBoxes
 struct BoundingBox {
@@ -76,6 +77,44 @@ BoundingBox getBoundingBox(const sPoint2D& a, const sPoint2D& b) {
     box.minY = std::min(a.y, b.y);
     box.maxY = std::max(a.y, b.y);
     return box;
+}
+
+// Function to check if they are closer than Threshold
+bool boundingBoxesCloserThanThreshold(const BoundingBox& box1, const BoundingBox& box2) {
+    // float dx = std::max(0.0f, std::max(box1.minX - box2.maxX, box2.minX - box1.maxX));
+    // float dy = std::max(0.0f, std::max(box1.minY - box2.maxY, box2.minY - box1.maxY));
+    // return (dx * dx + dy * dy) < (DISTANCE_THRESHOLD * DISTANCE_THRESHOLD);
+
+    // Checking if expaded box (box1) is overlapping the box2 
+    if (box1.maxX + DISTANCE_THRESHOLD < box2.minX || box1.minX + DISTANCE_THRESHOLD > box2.maxX ||
+        box1.maxY + DISTANCE_THRESHOLD < box2.minY || box1.minY + DISTANCE_THRESHOLD > box2.maxY)
+    {
+        return false; // No overlap so not closer
+    }
+    return true;
+}
+
+// Function to check if any points on one polyline are closer to any segments on the other polyline done in a simple way with the help of bounding boxes
+bool arePolylinesCloserThanThresholdBoundingBox(std::vector<sPoint2D>& polyline1,std::vector<sPoint2D>& polyline2)
+{
+    for(int p1 = 0; p1+1 < polyline1.size();p1++)
+    {
+        BoundingBox box1 = getBoundingBox(polyline1[p1], polyline1[p1+1]);
+        for(int p2 = 0; p2+1 < polyline2.size();p2++)
+        {
+            // creating the new boxes for the points we have
+            BoundingBox box2 = getBoundingBox(polyline2[p2], polyline2[p2+1]);
+
+            // only checking the distance if they are close enough
+            if (boundingBoxesCloserThanThreshold(box1, box2))
+                // checking if point on polyline1 is closer to segment on polyline2
+                if((pointToSegmentDistance(polyline1[p1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline1[p1+1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD)||
+                    // checking if point on polyline2 is closer to segment on polyline1
+                    (pointToSegmentDistance(polyline2[p2],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline2[p2+1],polyline1[p1],polyline1[p1+1]) < DISTANCE_THRESHOLD))
+                    return true; // early exit if any pair is closer than threshold
+        }
+    }
+    return false;
 }
 
 int main() {
