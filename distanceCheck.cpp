@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 
+
+const float DISTANCE_THRESHOLD = 1.5f;
 struct sPoint2D
 {
 sPoint2D(float xValue, float yValue)
@@ -40,6 +42,35 @@ float pointToSegmentDistance(const sPoint2D& p, const sPoint2D& a, const sPoint2
     return std::sqrt(distX * distX + distY * distY);
 }
 
-int main() {
+// Function to check if any points on one polyline are closer to any segments on the other polyline done in a simple and BruteForce way
+bool arePolylinesCloserThanThresholdBrute(std::vector<sPoint2D>& polyline1,
+                                          std::vector<sPoint2D>& polyline2)
+{
 
+    for(int p1 = 0; p1+1 < polyline1.size();p1++)
+    {
+        for(int p2 = 0; p2+1 < polyline2.size();p2++)
+        {
+            // checking if point on polyline1 is closer to segment on polyline2
+            if((pointToSegmentDistance(polyline1[p1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline1[p1+1],polyline2[p2],polyline2[p2+1]) < DISTANCE_THRESHOLD)||
+                // checking if point on polyline2 is closer to segment on polyline1
+                (pointToSegmentDistance(polyline1[p2],polyline2[p1],polyline2[p1+1]) < DISTANCE_THRESHOLD || pointToSegmentDistance(polyline1[p2+1],polyline2[p1],polyline2[p1+1]) < DISTANCE_THRESHOLD))
+                return true; // early exit if any pair is closer than threshold
+        }
+    }
+
+    return false;
+
+}
+int main() {
+    std::vector<sPoint2D> polyline1 {
+        {2.0F,3.0F}, {3.0F,4.0F}, {2.0F,6.0F}
+    };
+    std::vector<sPoint2D> polyline2 {
+        {5.0F,6.0F}, {5.0F,4.0F}, {7.0F,4.0F}, {7.0F,2.0F}
+    };
+
+    bool close = arePolylinesCloserThanThresholdBrute(polyline1, polyline2);
+    std::cout << (close ? "true\n" : "false\n");  
+    return 0;
 }
