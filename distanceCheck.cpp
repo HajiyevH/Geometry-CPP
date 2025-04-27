@@ -14,6 +14,12 @@ float x;
 float y;
 };
 
+struct hash_pair {
+    size_t operator()(const std::pair<int, int>& p) const
+    {
+        return std::hash<int>()(p.first) ^ (std::hash<int>()(p.second) << 1);
+    }
+};
 // Function to calculate distance between singular point and segment
 float pointToSegmentDistanceSquared(const sPoint2D& p, const sPoint2D& a, const sPoint2D& b)
 {
@@ -123,22 +129,36 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
 {
     const float thresholdSquared = DISTANCE_THRESHOLD * DISTANCE_THRESHOLD;
 
+    // find the bounds of the grid for spatial grid implementation
     float minX = polyline1[0].x,minY = polyline1[0].y,maxX=polyline1[0].x,maxY=polyline1[0].y;
 
     for(int i = 0; i < polyline1.size();i++)
     {
         minX = std::min(minX,polyline1[i].x);
         minY = std::min(minY,polyline1[i].y);
-        maxX = std::min(maxX,polyline1[i].x);
-        maxY = std::min(maxY,polyline1[i].y);
+        maxX = std::max(maxX,polyline1[i].x);
+        maxY = std::max(maxY,polyline1[i].y);
     }
     for(int i = 0; i < polyline2.size();i++)
     {
         minX = std::min(minX,polyline2[i].x);
         minY = std::min(minY,polyline2[i].y);
-        maxX = std::min(maxX,polyline2[i].x);
-        maxY = std::min(maxY,polyline2[i].y);
+        maxX = std::max(maxX,polyline2[i].x);
+        maxY = std::max(maxY,polyline2[i].y);
     }
+
+    // setting the one cellSize to Threshold
+    const float cellSize = DISTANCE_THRESHOLD;
+
+    const int gridHeight = std::ceil((maxY-minY)/cellSize);
+    const int gridWidth = std::ceil((maxX-minX)/cellSize);
+
+    // we are instantiating our grid as a map and in inside vector we will store all the points that fall into that cell
+    // bool -> true = polyline1 false = polyline2 for stoping distance check between points in same polylines
+    std::unordered_map<std::pair<int, int>, std::vector<std::pair<int, bool>>, hash_pair> grid;
+
+
+
 }
 
 int main() {
