@@ -14,7 +14,6 @@ float x;
 float y;
 };
 
-
 // Function to calculate distance between singular point and segment
 float pointToSegmentDistanceSquared(const sPoint2D& p, const sPoint2D& a, const sPoint2D& b)
 {
@@ -116,6 +115,30 @@ bool arePolylinesCloserThanThresholdBoundingBox(std::vector<sPoint2D>& polyline1
         }
     }
     return false;
+}
+
+// =====================================================================================================================================
+
+bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vector<sPoint2D>& polyline2)
+{
+    const float thresholdSquared = DISTANCE_THRESHOLD * DISTANCE_THRESHOLD;
+
+    float minX = polyline1[0].x,minY = polyline1[0].y,maxX=polyline1[0].x,maxY=polyline1[0].y;
+
+    for(int i = 0; i < polyline1.size();i++)
+    {
+        minX = std::min(minX,polyline1[i].x);
+        minY = std::min(minY,polyline1[i].y);
+        maxX = std::min(maxX,polyline1[i].x);
+        maxY = std::min(maxY,polyline1[i].y);
+    }
+    for(int i = 0; i < polyline2.size();i++)
+    {
+        minX = std::min(minX,polyline2[i].x);
+        minY = std::min(minY,polyline2[i].y);
+        maxX = std::min(maxX,polyline2[i].x);
+        maxY = std::min(maxY,polyline2[i].y);
+    }
 }
 
 int main() {
