@@ -157,6 +157,40 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
     // bool -> true = polyline1 false = polyline2 for stoping distance check between points in same polylines
     std::unordered_map<std::pair<int, int>, std::vector<std::pair<int, bool>>, hash_pair> grid;
 
+    // adding segments from polyline1 to the grid 
+    for(int p = 0; p < polyline1.size() - 1; p++) {
+        BoundingBox box = getBoundingBox(polyline1[p], polyline1[p+1]);
+        
+        // determinin which cells does the box (segment) falls into
+        int scellX = std::floor((box.minX - minX) / cellSize),scellY = std::floor((box.minY - minY) / cellSize);
+        int ecellX = std::floor((box.maxX - minX) / cellSize),ecellY = std::floor((box.maxY - minY) / cellSize);
+        
+        // popularting the grid
+        for(int y = scellY; y <= ecellY; y++) {
+            for(int x = scellX; x <= ecellX; x++) {
+                std::pair<int, int> cellKey(x, y);
+                grid[cellKey].push_back(std::make_pair(p, true)); // true bcz polyline1
+            }
+        }
+    }
+    
+    // adding segments from polyline2 to the grid 
+    for(int p = 0; p < polyline2.size() - 1; p++) {
+        BoundingBox box = getBoundingBox(polyline2[p], polyline2[p+1]);
+        
+        // determinin which cells does the box (segment) falls into
+        int scellX = std::floor((box.minX - minX) / cellSize),scellY = std::floor((box.minY - minY) / cellSize);
+        int ecellX = std::floor((box.maxX - minX) / cellSize),ecellY = std::floor((box.maxY - minY) / cellSize);
+        
+        // popularting the grid
+        for(int y = scellY; y <= ecellY; y++) {
+            for(int x = scellX; x <= ecellX; x++) {
+                std::pair<int, int> cellKey(x, y);
+                grid[cellKey].push_back(std::make_pair(p, false)); //false bcz polyline2
+            }
+        }
+    }
+    
 
 
 }
