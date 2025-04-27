@@ -1,6 +1,11 @@
 #include <iostream>
 #include <vector>
-
+#include <cmath>      
+#include <algorithm>    
+#include <vector>
+#include <unordered_map>
+#include <utility>    
+#include <functional>   
 
 const float DISTANCE_THRESHOLD = 1.5f;
 struct sPoint2D
@@ -30,7 +35,7 @@ float pointToSegmentDistanceSquared(const sPoint2D& p, const sPoint2D& a, const 
 
     // checking if A = B
     if (abSquare == 0.0f) 
-        return std::sqrt((p.x - a.x)*(p.x - a.x) + (p.y - a.y)*(p.y - a.y)); 
+        return ((p.x - a.x)*(p.x - a.x) + (p.y - a.y)*(p.y - a.y)); 
 
     // finding the projection and normalazing it between 0 and 1
     float s = ((p.x - a.x) * dx + (p.y - a.y) * dy) / abSquare;
@@ -103,6 +108,8 @@ bool boundingBoxesCloserThanThreshold(const BoundingBox& box1, const BoundingBox
 // Function to check if any points on one polyline are closer to any segments on the other polyline done in a simple way with the help of bounding boxes
 bool arePolylinesCloserThanThresholdBoundingBox(std::vector<sPoint2D>& polyline1,std::vector<sPoint2D>& polyline2)
 {
+    float thresholdSquared = DISTANCE_THRESHOLD * DISTANCE_THRESHOLD;
+
     for(int p1 = 0; p1+1 < polyline1.size();p1++)
     {
         BoundingBox box1 = getBoundingBox(polyline1[p1], polyline1[p1+1]);
@@ -183,6 +190,9 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
         maxY = std::max(maxY,polyline2[i].y);
     }
 
+    minX -= DISTANCE_THRESHOLD; minY -= DISTANCE_THRESHOLD;
+    maxX += DISTANCE_THRESHOLD; maxY += DISTANCE_THRESHOLD;
+
     // setting the one cellSize to Threshold
     const float cellSize = DISTANCE_THRESHOLD;
 
@@ -233,10 +243,12 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
         {
 
             std::pair<int, int> cellKey(cX, cY);
-            auto currCell = grid.find(cellKey);
-            if (currCell->second.empty()) continue; //skip if cell is empty
-            
-            const std::vector<std::pair<int, bool>>& currSeg = currCell->second;
+            auto it_currCell = grid.find(cellKey);
+            if (it_currCell == grid.end() || it_currCell->second.empty()) {
+                 continue; // Skip if cell not found in map or is empty
+            }
+
+            const std::vector<std::pair<int, bool>>& currSeg = it_currCell->second;
 
             for(int i = 0;i < currSeg.size();i++)
             {
@@ -258,22 +270,81 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
                         {
                             return true;
                         }
-                    }                
+                    }                 
+                }
+            }
+            int neighborOffsets[][2] = {{-1,1},{1, 0}, {0, 1}, {1, 1}};
+
+            for(const auto& offset : neighborOffsets)
+            {
+                int nX = cX + offset[0], nY = cY + offset[1];
+                if (nX < gridWidth && nY < gridHeight && nX >= 0) {
+                    std::pair<int, int> nCellKey(nX, nY);
+
+                    auto currNeighbour = grid.find(nCellKey);
+                    if (currNeighbour != grid.end() &&  !currNeighbour->second.empty()) {
+                        // Call helper function to compare current cell with neighbor
+                        if (checkCellPairForCloseSegments(currSeg, currNeighbour->second, polyline1, polyline2, thresholdSquared)) {
+                            return true; // Found close segments
+                        }
+                    }
                 }
             }
         }
     }
+    return false;
 }
 
 int main() {
+    // Example Polylines
     std::vector<sPoint2D> polyline1 {
-        {2.0F,3.0F}, {3.0F,4.0F}, {2.0F,6.0F}
-    };
-    std::vector<sPoint2D> polyline2 {
-        {5.0F,6.0F}, {5.0F,4.0F}, {7.0F,4.0F}, {7.0F,2.0F}
+        {0.0f, 0.0f}, {2.0f, 0.0f}, {2.0f, 2.0f}, {4.0f, 2.0f} // Polyline 1
     };
 
-    bool close = arePolylinesCloserThanThresholdBrute(polyline1, polyline2);
-    std::cout << (close ? "true\n" : "false\n");  
+    std::vector<sPoint2D> polyline2_far {
+        {5.0f, 5.0f}, {7.0f, 5.0f}, {7.0f, 7.0f} // Far away
+    };
+
+     std::vector<sPoint2D> polyline2_close {
+        // This segment {0.5, 1.0} to {2.5, 1.0} should be close to {2.0, 0.0} to {2.0, 2.0}
+        {0.5f, 1.0f}, {2.5f, 1.0f}, {3.0f, 3.0f}
+    };
+
+      std::vector<sPoint2D> polyline3_degenerate {
+        {1.0f, -1.0f}, {1.0f, -1.0f} // Degenerate segment (a point) close to {0,0}-{2,0}
+    };
+     std::vector<sPoint2D> polyline4_single_segment {
+        {1.0f, -0.5f}, {1.5f, -0.5f} // Segment near degenerate segment
+    };
+
+
+    std::cout << "Distance Threshold: " << DISTANCE_THRESHOLD << std::endl;
+    std::cout << "Threshold Squared: " << DISTANCE_THRESHOLD * DISTANCE_THRESHOLD << std::endl << std::endl;
+
+    std::cout << "--- Polyline 1 vs Polyline 2 (Far) ---" << std::endl;
+    std::cout << "  Brute Force:      " << (arePolylinesCloserThanThresholdBrute(polyline1, polyline2_far) ? "Close" : "Not Close") << std::endl;
+    std::cout << "  Bounding Box:     " << (arePolylinesCloserThanThresholdBoundingBox(polyline1, polyline2_far) ? "Close" : "Not Close") << std::endl;
+    std::cout << "  Spatial Grid:     " << (arePolylinesCloserThanThreshold(polyline1, polyline2_far) ? "Close" : "Not Close") << std::endl; // Renamed grid function
+    std::cout << std::endl;
+
+    std::cout << "--- Polyline 1 vs Polyline 2 (Close) ---" << std::endl;
+    std::cout << "  Brute Force:      " << (arePolylinesCloserThanThresholdBrute(polyline1, polyline2_close) ? "Close" : "Not Close") << std::endl;
+    std::cout << "  Bounding Box:     " << (arePolylinesCloserThanThresholdBoundingBox(polyline1, polyline2_close) ? "Close" : "Not Close") << std::endl;
+    std::cout << "  Spatial Grid:     " << (arePolylinesCloserThanThreshold(polyline1, polyline2_close) ? "Close" : "Not Close") << std::endl; // Renamed grid function
+    std::cout << std::endl;
+
+    std::cout << "--- Polyline 1 vs Polyline 3 (Degenerate Close) ---" << std::endl;
+     std::cout << "  Brute Force:      " << (arePolylinesCloserThanThresholdBrute(polyline1, polyline3_degenerate) ? "Close" : "Not Close") << std::endl;
+     std::cout << "  Bounding Box:     " << (arePolylinesCloserThanThresholdBoundingBox(polyline1, polyline3_degenerate) ? "Close" : "Not Close") << std::endl;
+     std::cout << "  Spatial Grid:     " << (arePolylinesCloserThanThreshold(polyline1, polyline3_degenerate) ? "Close" : "Not Close") << std::endl; // Renamed grid function
+     std::cout << std::endl;
+
+     std::cout << "--- Polyline 4 (Segment) vs Polyline 3 (Degenerate Close) ---" << std::endl;
+     std::cout << "  Brute Force:      " << (arePolylinesCloserThanThresholdBrute(polyline4_single_segment, polyline3_degenerate) ? "Close" : "Not Close") << std::endl;
+     std::cout << "  Bounding Box:     " << (arePolylinesCloserThanThresholdBoundingBox(polyline4_single_segment, polyline3_degenerate) ? "Close" : "Not Close") << std::endl;
+     std::cout << "  Spatial Grid:     " << (arePolylinesCloserThanThreshold(polyline4_single_segment, polyline3_degenerate) ? "Close" : "Not Close") << std::endl; // Renamed grid function
+     std::cout << std::endl;
+
+
     return 0;
 }

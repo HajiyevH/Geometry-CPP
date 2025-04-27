@@ -41,6 +41,8 @@
         "algorithm": "cpp",
         "unordered_map": "cpp",
         "__hash_table": "cpp",
-        "__split_buffer": "cpp"
+        "__split_buffer": "cpp",
+        "__node_handle": "cpp",
+        "forward_list": "cpp"
     }
 }
