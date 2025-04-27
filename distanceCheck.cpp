@@ -198,6 +198,7 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
     // setting the one cellSize to Threshold
     const float cellSize = DISTANCE_THRESHOLD;
 
+    // getting the height of the grid we will create
     const int gridHeight = std::ceil((maxY-minY)/cellSize);
     const int gridWidth = std::ceil((maxX-minX)/cellSize);
 
@@ -252,30 +253,10 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
             
             // getting the segments in the cell that we are checking
             const std::vector<std::pair<int, bool>>& currSeg = it_currCell->second;
-
+                
             // checking the segments same cell
-            for(int i = 0;i < currSeg.size();i++)
-            {
-                for(int j = i+1;j < currSeg.size();j++) 
-                {
-                    if(currSeg[i].second == currSeg[j].second) continue;
-                    int seg1Idx = currSeg[i].first;
-                    int seg2Idx = currSeg[j].first;
-                    bool seg1IsPoly1 = currSeg[i].second;
-                    const sPoint2D& p1a = seg1IsPoly1 ? polyline1[seg1Idx]   : polyline2[seg1Idx],p1b = seg1IsPoly1 ? polyline1[seg1Idx+1] : polyline2[seg1Idx+1];
-                    const sPoint2D& p2a = seg1IsPoly1 ? polyline2[seg2Idx]   : polyline1[seg2Idx],p2b = seg1IsPoly1 ? polyline2[seg2Idx+1] : polyline1[seg2Idx+1];
-                    BoundingBox box1 = getBoundingBox(p1a, p1b);
-                    BoundingBox box2 = getBoundingBox(p2a, p2b);
-                    if (boundingBoxesCloserThanThreshold(box1, box2)) {
-                        if ((pointToSegmentDistanceSquared(p1a, p2a, p2b) < thresholdSquared ||
-                             pointToSegmentDistanceSquared(p1b, p2a, p2b) < thresholdSquared) ||
-                            (pointToSegmentDistanceSquared(p2a, p1a, p1b) < thresholdSquared ||
-                             pointToSegmentDistanceSquared(p2b, p1a, p1b) < thresholdSquared))
-                        {
-                            return true;
-                        }
-                    }                 
-                }
+            if (checkCellPair(currSeg, currSeg, polyline1, polyline2, thresholdSquared)) {
+                return true; // Found close segments
             }
 
             // checking these 4 sides of cell is enough and at the end all neigbours of all cells will be checked with eachother
@@ -301,6 +282,8 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
     return false; //if nothin returned true before then the segments are far away
 }
 
+
+// AI generated test cases
 int main() {
     // Example Polylines
     std::vector<sPoint2D> polyline1 {
