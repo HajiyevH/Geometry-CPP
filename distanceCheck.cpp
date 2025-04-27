@@ -125,6 +125,7 @@ bool arePolylinesCloserThanThresholdBoundingBox(std::vector<sPoint2D>& polyline1
 
 // =====================================================================================================================================
 
+// bool cellChecker()
 bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vector<sPoint2D>& polyline2)
 {
     const float thresholdSquared = DISTANCE_THRESHOLD * DISTANCE_THRESHOLD;
@@ -191,6 +192,43 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
         }
     }
     
+    for(int cY = 0;cY < gridHeight;cY++)
+    {
+        for(int cX = 0; cX < gridWidth;cX++)
+        {
+
+            std::pair<int, int> cellKey(cX, cY);
+            auto currCell = grid.find(cellKey);
+            if (currCell->second.empty()) continue; //skip if cell is empty
+            
+            const std::vector<std::pair<int, bool>>& currSeg = currCell->second;
+
+            for(int i = 0;i < currSeg.size();i++)
+            {
+                for(int j = i+1;j < currSeg.size();j++) 
+                {
+                    if(currSeg[i].second == currSeg[j].second) continue;
+                    int seg1_idx = currSeg[i].first;
+                    int seg2_idx = currSeg[j].first;
+                    bool seg1_is_poly1 = currSeg[i].second;
+                    const sPoint2D& p1a = seg1_is_poly1 ? polyline1[seg1_idx]   : polyline2[seg1_idx],p1b = seg1_is_poly1 ? polyline1[seg1_idx+1] : polyline2[seg1_idx+1];
+                    const sPoint2D& p2a = seg1_is_poly1 ? polyline2[seg2_idx]   : polyline1[seg2_idx],p2b = seg1_is_poly1 ? polyline2[seg2_idx+1] : polyline1[seg2_idx+1];
+                    BoundingBox box1 = getBoundingBox(p1a, p1b);
+                    BoundingBox box2 = getBoundingBox(p2a, p2b);
+                    if (boundingBoxesCloserThanThreshold(box1, box2)) {
+                        if ((pointToSegmentDistanceSquared(p1a, p2a, p2b) < thresholdSquared ||
+                             pointToSegmentDistanceSquared(p1b, p2a, p2b) < thresholdSquared) ||
+                            (pointToSegmentDistanceSquared(p2a, p1a, p1b) < thresholdSquared ||
+                             pointToSegmentDistanceSquared(p2b, p1a, p1b) < thresholdSquared))
+                        {
+                            return true;
+                        }
+                    }                
+                }
+            }
+        }
+    }
+
 
 
 }
