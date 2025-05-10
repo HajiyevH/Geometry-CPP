@@ -265,7 +265,7 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
             for(const auto& offset : neighborOffsets)
             {
                 int nX = cX + offset[0], nY = cY + offset[1];
-                if (nX < gridWidth && nY < gridHeight && nX >= 0) {
+                if (nX < gridWidth && nY < gridHeight && nX >= 0 && nY >= 0) {
                     std::pair<int, int> nCellKey(nX, nY);
 
                     auto currNeighbour = grid.find(nCellKey);
