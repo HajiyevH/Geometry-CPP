@@ -51,17 +51,17 @@ float pointToSegmentDistanceSquared(const sPoint2D& p, const sPoint2D& a, const 
     return distX * distX + distY * distY;
 }
 
-// 2D cross product
+// returns 2D cross product
 float cross(const sPoint2D& a, const sPoint2D& b) {
     return a.x * b.y - a.y * b.x;
 }
 
-// this functions gets the orientation of three points in the space (i got this from this handbook https://github.com/vlecomte/cp-geo)
+// this functions gets the orientation of three points in the space
 float orient(const sPoint2D& a, const sPoint2D& b, const sPoint2D& c) {
     return cross({b.x - a.x, b.y - a.y}, {c.x - a.x, c.y - a.y});
 }
 
-// checking if they intersect
+// returns true if they intersect (if they cross each other)
 bool segmentsProperlyIntersect(const sPoint2D& a, const sPoint2D& b, const sPoint2D& c, const sPoint2D& d) {
     float oa = orient(c, d, a);
     float ob = orient(c, d, b);
