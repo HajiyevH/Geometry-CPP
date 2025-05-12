@@ -34,7 +34,7 @@ float pointToSegmentDistanceSquared(const sPoint2D& p, const sPoint2D& a, const 
 
     // checking if A = B
     if (abSquare == 0.0f) 
-        return ((p.x - a.x)*(p.x - a.x) + (p.y - a.y)*(p.y - a.y)); 
+        return ((p.x - b.x)*(p.x - b.x) + (p.y - b.y)*(p.y - b.y)); 
 
     // finding the projection and normalazing it between 0 and 1
     float s = ((p.x - a.x) * dx + (p.y - a.y) * dy) / abSquare;
@@ -51,6 +51,25 @@ float pointToSegmentDistanceSquared(const sPoint2D& p, const sPoint2D& a, const 
     return distX * distX + distY * distY;
 }
 
+// 2D cross product
+float cross(const sPoint2D& a, const sPoint2D& b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+// this functions gets the orientation of three points in the space (i got this from this handbook https://github.com/vlecomte/cp-geo)
+float orient(const sPoint2D& a, const sPoint2D& b, const sPoint2D& c) {
+    return cross({b.x - a.x, b.y - a.y}, {c.x - a.x, c.y - a.y});
+}
+
+// checking if they intersect
+bool segmentsProperlyIntersect(const sPoint2D& a, const sPoint2D& b, const sPoint2D& c, const sPoint2D& d) {
+    float oa = orient(c, d, a);
+    float ob = orient(c, d, b);
+    float oc = orient(a, b, c);
+    float od = orient(a, b, d);
+    return (oa * ob < 0) && (oc * od < 0);
+}
+
 // =====================================================================================================================================
 
 // Function to check if any points on one polyline are closer to any segments on the other polyline done in a simple and BruteForce way
@@ -62,6 +81,9 @@ bool arePolylinesCloserThanThresholdBrute(std::vector<sPoint2D>& polyline1,std::
     {
         for(int p2 = 0; p2+1 < polyline2.size();p2++)
         {
+            if (segmentsProperlyIntersect(polyline1[p1], polyline1[p1+1], polyline2[p2], polyline2[p2+1])) {
+                return true;
+            }
             // checking if point on polyline1 is closer to segment on polyline2
             if((pointToSegmentDistanceSquared(polyline1[p1],polyline2[p2],polyline2[p2+1]) < thresholdSquared || pointToSegmentDistanceSquared(polyline1[p1+1],polyline2[p2],polyline2[p2+1]) < thresholdSquared)||
                 // checking if point on polyline2 is closer to segment on polyline1
@@ -119,6 +141,9 @@ bool arePolylinesCloserThanThresholdBoundingBox(std::vector<sPoint2D>& polyline1
 
             // only checking the distance if they are close enough
             if (boundingBoxesCloserThanThreshold(box1, box2))
+                if (segmentsProperlyIntersect(polyline1[p1], polyline1[p1+1], polyline2[p2], polyline2[p2+1])) {
+                    return true;
+                }
                 // checking if point on polyline1 is closer to segment on polyline2
                 if((pointToSegmentDistanceSquared(polyline1[p1],polyline2[p2],polyline2[p2+1]) < thresholdSquared || pointToSegmentDistanceSquared(polyline1[p1+1],polyline2[p2],polyline2[p2+1]) < thresholdSquared)||
                     // checking if point on polyline2 is closer to segment on polyline1
@@ -156,6 +181,9 @@ bool checkCellPair(const std::vector<std::pair<int, bool>> seg1,const std::vecto
                 BoundingBox box2 = getBoundingBox(p2a, p2b);
     
                 if (boundingBoxesCloserThanThreshold(box1, box2)) {
+                    if (segmentsProperlyIntersect(p1a, p1b, p2a, p2b)) {
+                        return true;
+                    }
                     if ((pointToSegmentDistanceSquared(p1a, p2a, p2b) < thresholdSquared || pointToSegmentDistanceSquared(p1b, p2a, p2b) < thresholdSquared) ||
                         (pointToSegmentDistanceSquared(p2a, p1a, p1b) < thresholdSquared || pointToSegmentDistanceSquared(p2b, p1a, p1b) < thresholdSquared))
                     {
@@ -248,7 +276,7 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
             std::pair<int, int> cellKey(cX, cY);
             auto it_currCell = grid.find(cellKey); // iterator for the map
             if (it_currCell == grid.end() || it_currCell->second.empty()) {
-                 continue; // skipping if cell not found in map or is empty
+                continue; // skipping if cell not found in map or is empty
             }
             
             // getting the segments in the cell that we are checking
@@ -284,7 +312,7 @@ bool arePolylinesCloserThanThreshold(std::vector<sPoint2D>& polyline1, std::vect
 
 
 // AI generated test cases
-int main() {
+int main(){
     // Example Polylines
     std::vector<sPoint2D> polyline1 {
         {0.0f, 0.0f}, {2.0f, 0.0f}, {2.0f, 2.0f}, {4.0f, 2.0f} // Polyline 1
@@ -333,7 +361,18 @@ int main() {
      std::cout << "  Bounding Box:     " << (arePolylinesCloserThanThresholdBoundingBox(polyline4_single_segment, polyline3_degenerate) ? "Close" : "Not Close") << std::endl;
      std::cout << "  Spatial Grid:     " << (arePolylinesCloserThanThreshold(polyline4_single_segment, polyline3_degenerate) ? "Close" : "Not Close") << std::endl; // Renamed grid function
      std::cout << std::endl;
+    std::vector<sPoint2D> polyline_intersect1 {
+        {0.0f, 0.0f}, {2.0f, 2.0f}
+    };
+    std::vector<sPoint2D> polyline_intersect2 {
+        {0.0f, 2.0f}, {2.0f, 0.0f}
+    };
 
+    std::cout << "--- Intersecting Polylines ---" << std::endl;
+    std::cout << "  Brute Force:      " << (arePolylinesCloserThanThresholdBrute(polyline_intersect1, polyline_intersect2) ? "Close" : "Not Close") << std::endl;
+    std::cout << "  Bounding Box:     " << (arePolylinesCloserThanThresholdBoundingBox(polyline_intersect1, polyline_intersect2) ? "Close" : "Not Close") << std::endl;
+    std::cout << "  Spatial Grid:     " << (arePolylinesCloserThanThreshold(polyline_intersect1, polyline_intersect2) ? "Close" : "Not Close") << std::endl;
+    std::cout << std::endl;
 
     return 0;
 }
